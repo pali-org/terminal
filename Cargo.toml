@@ -1,0 +1,43 @@
+[package]
+name = "pali-terminal"
+version = "0.1.0"
+edition = "2021"
+authors = ["Yuvinscria Werdxz <werdxz@werdxz.info>"]
+description = "Terminal interfaces (CLI and TUI) for Pali todo management system"
+license = "MIT"
+repository = "https://github.com/pali-org/terminal"
+keywords = ["todo", "cli", "tui", "terminal", "pali"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "pacli"
+path = "src/bin/pacli.rs"
+
+[[bin]]
+name = "patui"
+path = "src/bin/patui.rs"
+
+[features]
+default = ["cli", "tui"]
+cli = ["dep:clap"]
+tui = ["dep:ratatui", "dep:crossterm"]
+
+[dependencies]
+anyhow = "1.0.99"
+chrono = { version = "0.4.41", features = ["serde"] }
+colored = "3.0.0"
+directories = "6.0.0"
+pali-types = { git = "https://github.com/pali-org/types.git" }
+reqwest = { version = "0.12.23", features = ["json"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.143"
+tokio = { version = "1.47.1", features = ["full"] }
+
+# Feature-gated dependencies
+clap = { version = "4.5.46", features = ["derive"], optional = true }
+ratatui = { version = "0.28", optional = true }
+crossterm = { version = "0.28", optional = true }
+
+[dev-dependencies]
+tempfile = "3.0"
+mockall = "0.12"
