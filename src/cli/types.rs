@@ -6,8 +6,16 @@ use clap::{Parser, Subcommand};
 #[command(name = "pacli")]
 #[command(about = "A CLI for managing todos with Pali server", long_about = None)]
 pub struct Cli {
+    /// Show version information
+    #[arg(short = 'V', long)]
+    pub version: bool,
+    
+    /// Verbose mode (-v info, -vv debug, -vvv trace)
+    #[arg(short = 'v', long = "verbose", global = true, action = clap::ArgAction::Count)]
+    pub verbose: u8,
+    
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Option<Commands>,
 }
 
 #[derive(Subcommand)]

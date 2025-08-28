@@ -1,6 +1,6 @@
 [package]
 name = "pali-terminal"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Yuvinscria Werdxz <werdxz@werdxz.info>"]
 description = "Terminal interfaces (CLI and TUI) for Pali todo management system"
@@ -18,9 +18,10 @@ name = "patui"
 path = "src/bin/patui.rs"
 
 [features]
-default = ["cli", "tui"]
+default = ["cli", "tui", "http-optimized"]
 cli = ["dep:clap"]
 tui = ["dep:ratatui", "dep:crossterm"]
+http-optimized = ["reqwest/hickory-dns", "reqwest/rustls-tls"]
 
 [dependencies]
 anyhow = "1.0.99"
@@ -28,7 +29,7 @@ chrono = { version = "0.4.41", features = ["serde"] }
 colored = "3.0.0"
 directories = "6.0.0"
 pali-types = { git = "https://github.com/pali-org/types.git" }
-reqwest = { version = "0.12.23", features = ["json"] }
+reqwest = { version = "0.12.23", features = ["json"], default-features = false }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.143"
 tokio = { version = "1.47.1", features = ["full"] }
@@ -37,6 +38,8 @@ tokio = { version = "1.47.1", features = ["full"] }
 clap = { version = "4.5.46", features = ["derive"], optional = true }
 ratatui = { version = "0.28", optional = true }
 crossterm = { version = "0.28", optional = true }
+log = "0.4.27"
+env_logger = "0.11.8"
 
 [dev-dependencies]
 tempfile = "3.0"

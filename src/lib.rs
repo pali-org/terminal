@@ -20,6 +20,10 @@ pub mod config;
 // Shared constants
 pub const ID_DISPLAY_LENGTH: usize = 8;
 
+// Logging utilities (CLI only for now)
+#[cfg(feature = "cli")]
+pub mod logging;
+
 // CLI-specific modules
 #[cfg(feature = "cli")]
 pub mod cli {
@@ -29,6 +33,7 @@ pub mod cli {
         pub mod todo;
     }
     pub mod types;
+    pub mod utils;
 }
 
 // TUI-specific modules  
@@ -42,6 +47,9 @@ pub mod tui {
 // Re-exports for convenience
 pub use api::ApiClient;
 pub use config::Config;
+
+#[cfg(feature = "cli")]
+pub use logging::init_logging;
 
 #[cfg(test)]
 mod tests {

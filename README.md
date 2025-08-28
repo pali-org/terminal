@@ -61,7 +61,32 @@ cargo build --release
 
 ### TUI (`patui`)
 
-Interactive terminal interface (currently placeholder - CLI is fully functional).
+**Full-featured interactive terminal interface with:**
+
+**Core Features:**
+- **Real-time todo management** - View, create, toggle, and delete todos
+- **Beautiful interface** - Color-coded priorities, completion status indicators
+- **Multiple screens** - Todo list, add form, help, and settings
+- **Keyboard navigation** - Vim-like (h/j/k/l) and arrow key support
+- **Priority indicators** - Visual ! / !! / !!! for low/medium/high priority
+- **Loading states** - Smooth UX with loading overlays during API calls
+- **Error handling** - User-friendly error and success messages
+
+**Navigation:**
+- `↑/j` - Move up, `↓/k` - Move down
+- `n/a` - Add new todo
+- `Enter/Space` - Toggle completion status
+- `d` - Delete selected todo
+- `r` - Refresh todo list
+- `h/?` - Show help screen
+- `s` - Settings screen
+- `q/Esc` - Quit or go back
+
+**Screens:**
+- **Todo List** - Main interface with all todos
+- **Add Todo** - Form for creating new todos (title, description, priority)
+- **Help** - Complete keyboard shortcuts and usage guide
+- **Settings** - View current configuration
 
 ## Architecture
 
@@ -83,14 +108,24 @@ src/
 
 - `cli` - Enables CLI functionality (default)
 - `tui` - Enables TUI functionality (default)
+- `http-optimized` - Enables optimized HTTP client with Hickory DNS and Rustls (default)
 
-Build only what you need:
+Build configurations:
 ```bash
-# CLI only
+# Full build with all optimizations (default)
+cargo build
+
+# CLI only with HTTP optimizations
+cargo build --no-default-features --features cli,http-optimized
+
+# TUI only with HTTP optimizations
+cargo build --no-default-features --features tui,http-optimized
+
+# Standard HTTP client (no optimizations)
 cargo build --no-default-features --features cli
 
-# TUI only  
-cargo build --no-default-features --features tui
+# Both CLI and TUI with standard HTTP
+cargo build --no-default-features --features cli,tui
 ```
 
 ## Configuration
@@ -136,7 +171,7 @@ cargo clippy -- -W clippy::pedantic
 This codebase maintains exemplary standards:
 - **Zero clippy warnings** (even with `--pedantic`)
 - **Comprehensive error documentation** for all functions
-- **17 unit tests** with 100% pass rate
+- **21 unit tests** with 100% pass rate (including TUI components)
 - **Modern Rust idioms** throughout
 
 ## API Integration

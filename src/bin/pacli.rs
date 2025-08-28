@@ -5,13 +5,27 @@ compile_error!("The 'cli' feature must be enabled to build pacli");
 
 use anyhow::Result;
 use clap::Parser;
-use pali_terminal::cli::{commands, types::{Cli, Commands}};
+use pali_terminal::{init_logging, cli::{commands, types::{Cli, Commands}}};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    match cli.command {
+    // Handle version flag
+    if cli.version {
+        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
+
+    // Initialize logging based on verbosity level
+    init_logging(cli.verbose)?;
+
+    // Require a command if no version flag
+    let Some(command) = cli.command else {
+        anyhow::bail!("A command is required. Use --help for usage information.");
+    };
+
+    match command {
         Commands::Config { action } => {
             commands::config::handle(action).await?;
         }

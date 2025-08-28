@@ -5,7 +5,7 @@ compile_error!("The 'tui' feature must be enabled to build patui");
 
 use anyhow::Result;
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -41,26 +41,21 @@ async fn main() -> Result<()> {
     terminal.show_cursor()?;
 
     if let Err(err) = res {
-        println!("Error: {err:?}");
+        eprintln!("Error: {err}");
     }
 
     Ok(())
 }
 
-#[allow(clippy::unused_async)] // Function is async for future extensibility 
 async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> {
+    // Load initial todos
+    app.load_todos().await?;
+    
     loop {
         terminal.draw(|f| ui::render(f, app))?;
 
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') | KeyCode::Esc => {
-                    break;
-                }
-                _ => {
-                    app.handle_key(key.code)?;
-                }
-            }
+            app.handle_key(key.code).await?;
         }
 
         if app.should_quit {

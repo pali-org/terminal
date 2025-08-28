@@ -1,5 +1,10 @@
-use crate::{api::{ApiClient, CreateTodoRequest, Todo, UpdateTodoRequest}, ID_DISPLAY_LENGTH};
-use anyhow::Result;
+use crate::{
+    api::{ApiClient, CreateTodoRequest, Todo, UpdateTodoRequest}, 
+    cli::utils::resolve_partial_id,
+    ID_DISPLAY_LENGTH, 
+    time_operation
+};
+use anyhow::{Context, Result};
 use chrono::{Local, NaiveDateTime, TimeZone, Utc};
 use colored::{ColoredString, Colorize};
 use pali_types::priority;
@@ -114,8 +119,14 @@ pub fn parse_priority(priority_str: &str) -> i32 {
 /// - Server returns an error response
 /// - API key is missing or invalid
 pub async fn list(all: bool, tag: Option<String>, priority: Option<String>) -> Result<()> {
+    log::info!("Loading configuration and connecting to server");
     let client = ApiClient::new()?;
-    let todos = client.list_todos(tag, priority).await?;
+    
+    log::info!("Fetching todos from server (all={}, tag={:?}, priority={:?})", all, tag, priority);
+    let todos = time_operation!(
+        client.list_todos(tag, priority).await?,
+        "Fetch todos from server"
+    );
 
     let filtered_todos: Vec<_> = if all {
         todos
@@ -153,7 +164,12 @@ pub async fn list(all: bool, tag: Option<String>, priority: Option<String>) -> R
 /// - API key is missing or invalid
 pub async fn get(id: String) -> Result<()> {
     let client = ApiClient::new()?;
-    let todo = client.get_todo(&id).await?;
+    
+    // Resolve partial ID to full ID
+    let full_id = resolve_partial_id(&id, &client).await
+        .context(format!("Failed to resolve ID '{}'", id))?;
+    
+    let todo = client.get_todo(&full_id).await?;
 
     println!("{}", "Todo Details:".bold());
     print_todo_detailed(&todo);
@@ -180,6 +196,10 @@ pub async fn update(
     _tags: Option<String>,
 ) -> Result<()> {
     let client = ApiClient::new()?;
+    
+    // Resolve partial ID to full ID
+    let full_id = resolve_partial_id(&id, &client).await
+        .context(format!("Failed to resolve ID '{}'", id))?;
 
     let due_timestamp = due.map(|d| parse_date(&d)).transpose()?;
 
@@ -193,7 +213,7 @@ pub async fn update(
         due_date: due_timestamp,
     };
 
-    let todo = client.update_todo(&id, request).await?;
+    let todo = client.update_todo(&full_id, request).await?;
 
     println!("{} Updated todo: {}", "✓".green(), todo.title.bold());
 
@@ -211,7 +231,12 @@ pub async fn update(
 /// - API key is missing or invalid
 pub async fn delete(id: String) -> Result<()> {
     let client = ApiClient::new()?;
-    client.delete_todo(&id).await?;
+    
+    // Resolve partial ID to full ID
+    let full_id = resolve_partial_id(&id, &client).await
+        .context(format!("Failed to resolve ID '{}'", id))?;
+    
+    client.delete_todo(&full_id).await?;
 
     println!("{} Deleted todo with ID: {}", "✓".green(), id.cyan());
 
@@ -229,7 +254,12 @@ pub async fn delete(id: String) -> Result<()> {
 /// - API key is missing or invalid
 pub async fn toggle(id: String) -> Result<()> {
     let client = ApiClient::new()?;
-    let todo = client.toggle_todo(&id).await?;
+    
+    // Resolve partial ID to full ID
+    let full_id = resolve_partial_id(&id, &client).await
+        .context(format!("Failed to resolve ID '{}'", id))?;
+    
+    let todo = client.toggle_todo(&full_id).await?;
 
     let status = if todo.completed {
         "completed"
@@ -257,6 +287,10 @@ pub async fn toggle(id: String) -> Result<()> {
 /// - API key is missing or invalid
 pub async fn complete(id: String) -> Result<()> {
     let client = ApiClient::new()?;
+    
+    // Resolve partial ID to full ID
+    let full_id = resolve_partial_id(&id, &client).await
+        .context(format!("Failed to resolve ID '{}'", id))?;
 
     let request = UpdateTodoRequest {
         title: None,
@@ -266,7 +300,7 @@ pub async fn complete(id: String) -> Result<()> {
         priority: None,
     };
 
-    let todo = client.update_todo(&id, request).await?;
+    let todo = client.update_todo(&full_id, request).await?;
 
     println!("{} Marked '{}' as complete", "✓".green(), todo.title.bold());
 

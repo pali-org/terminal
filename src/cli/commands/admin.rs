@@ -138,6 +138,16 @@ async fn revoke_key(id: String) -> Result<()> {
     Ok(())
 }
 
+/// Initializes the Pali server with a new endpoint URL and retrieves the first admin key
+/// 
+/// # Errors
+/// 
+/// Returns an error if:
+/// - Configuration cannot be saved to disk
+/// - Network request to server fails
+/// - Server is already initialized
+/// - Server returns an error response
+/// - API key cannot be saved to configuration
 pub async fn initialize_with_url(url: String) -> Result<()> {
     // Create config with the provided URL first
     let mut config = Config::load().unwrap_or_default();
