@@ -1,5 +1,10 @@
 # Pali Terminal Client
 
+[![CI](https://github.com/pali-org/terminal/actions/workflows/ci.yml/badge.svg)](https://github.com/pali-org/terminal/actions/workflows/ci.yml)
+[![Rust](https://img.shields.io/badge/rust-%23dea584.svg?style=flat&logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Crates.io](https://img.shields.io/crates/v/pali-terminal.svg)](https://crates.io/crates/pali-terminal)
+
 Production-ready terminal interfaces for the Pali todo management system.
 
 ## Overview
@@ -160,19 +165,11 @@ cargo build
 cargo build --release
 
 # Run tests
-cargo test
+cargo test --all-features
 
 # Check code quality
-cargo clippy -- -W clippy::pedantic
+cargo clippy -- -D warnings
 ```
-
-### Code Quality
-
-This codebase maintains exemplary standards:
-- **Zero clippy warnings** (even with `--pedantic`)
-- **Comprehensive error documentation** for all functions
-- **21 unit tests** with 100% pass rate (including TUI components)
-- **Modern Rust idioms** throughout
 
 ## API Integration
 
@@ -185,15 +182,7 @@ The client is designed to work seamlessly with Pali servers and supports:
 
 ## Contributing
 
-This is part of the Pali organization ecosystem:
-- **Terminal Client** (this repo) - CLI/TUI interfaces
-- **Server** - Cloudflare Workers API
-- **Types** - Shared type definitions
-
-See coordination files:
-- `CLAUDE.md` - Overall project coordination
-- `Claude.1.md` - Terminal client progress
-- `Claude.2.md` - Server progress
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
 ## License
 
