@@ -9,11 +9,11 @@ pub struct Cli {
     /// Show version information
     #[arg(short = 'V', long)]
     pub version: bool,
-    
+
     /// Verbose mode (-v info, -vv debug, -vvv trace)
     #[arg(short = 'v', long = "verbose", global = true, action = clap::ArgAction::Count)]
     pub verbose: u8,
-    
+
     #[command(subcommand)]
     pub command: Option<Commands>,
 }

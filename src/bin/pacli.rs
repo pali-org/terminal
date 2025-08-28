@@ -5,7 +5,13 @@ compile_error!("The 'cli' feature must be enabled to build pacli");
 
 use anyhow::Result;
 use clap::Parser;
-use pali_terminal::{init_logging, cli::{commands, types::{Cli, Commands}}};
+use pali_terminal::{
+    cli::{
+        commands,
+        types::{Cli, Commands},
+    },
+    init_logging,
+};
 
 #[tokio::main]
 async fn main() -> Result<()> {

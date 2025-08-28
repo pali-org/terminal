@@ -1,16 +1,16 @@
 //! # Pali Terminal
-//! 
+//!
 //! Terminal interfaces (CLI and TUI) for the Pali todo management system.
-//! 
+//!
 //! This crate provides both command-line and terminal user interface tools:
 //! - `pacli` - Command-line interface for automation and scripting
 //! - `patui` - Terminal user interface for interactive usage
-//! 
+//!
 //! ## Features
-//! 
+//!
 //! - `cli` - Enables command-line interface functionality
 //! - `tui` - Enables terminal user interface functionality
-//! 
+//!
 //! Both features are enabled by default.
 
 // Core modules - always available
@@ -36,12 +36,12 @@ pub mod cli {
     pub mod utils;
 }
 
-// TUI-specific modules  
+// TUI-specific modules
 #[cfg(feature = "tui")]
 pub mod tui {
     pub mod app;
-    pub mod ui;
     pub mod components;
+    pub mod ui;
 }
 
 // Re-exports for convenience
@@ -54,7 +54,7 @@ pub use logging::init_logging;
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_id_truncation() {
         let test_id = "abcdefghijklmnop"; // 16 characters

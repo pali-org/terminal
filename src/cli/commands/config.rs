@@ -1,12 +1,12 @@
-use crate::config::Config;
 use crate::cli::types::ConfigAction;
+use crate::config::Config;
 use anyhow::Result;
 use colored::Colorize;
 
 /// Handles configuration actions (set endpoint, set key, show config)
-/// 
+///
 /// # Errors
-/// 
+///
 /// Returns an error if:
 /// - Configuration cannot be loaded or saved
 /// - File I/O operations fail
@@ -61,7 +61,7 @@ fn show_config() -> Result<()> {
     if let Ok(path) = Config::config_path() {
         println!("  {} {}", "Config file:".cyan(), path.display());
     }
-    
+
     if config.api_key.is_some() {
         println!();
         println!(

@@ -5,7 +5,7 @@ use log::LevelFilter;
 use std::io::Write;
 
 /// Initialize logging based on verbosity count
-/// 
+///
 /// - 0: WARN level (default)
 /// - 1: INFO level (-v)
 /// - 2: DEBUG level (-vv)  
@@ -21,18 +21,18 @@ pub fn init_logging(verbose_count: u8) -> Result<()> {
     let result = env_logger::Builder::from_default_env()
         .filter_level(log_level)
         .filter_module("reqwest", LevelFilter::Info) // Keep reqwest quiet unless trace
-        .filter_module("hyper", LevelFilter::Info)   // Keep hyper quiet unless trace
+        .filter_module("hyper", LevelFilter::Info) // Keep hyper quiet unless trace
         .format(|buf, record| {
             use log::Level;
-            
+
             let level_style = match record.level() {
                 Level::Error => "\x1b[31m[ERROR]\x1b[0m", // Red
-                Level::Warn  => "\x1b[33m[WARN ]\x1b[0m", // Yellow
-                Level::Info  => "\x1b[32m[INFO ]\x1b[0m", // Green
+                Level::Warn => "\x1b[33m[WARN ]\x1b[0m",  // Yellow
+                Level::Info => "\x1b[32m[INFO ]\x1b[0m",  // Green
                 Level::Debug => "\x1b[36m[DEBUG]\x1b[0m", // Cyan
                 Level::Trace => "\x1b[37m[TRACE]\x1b[0m", // White
             };
-            
+
             writeln!(buf, "{} {}", level_style, record.args())
         })
         .target(env_logger::Target::Stderr)
@@ -40,7 +40,7 @@ pub fn init_logging(verbose_count: u8) -> Result<()> {
 
     // If logger is already initialized, that's fine - just continue
     match result {
-        Ok(()) => {},
+        Ok(()) => {}
         Err(_) => {
             // Logger already initialized, this is expected in some cases (like tests)
             // Just continue silently
@@ -48,7 +48,7 @@ pub fn init_logging(verbose_count: u8) -> Result<()> {
     }
 
     if verbose_count > 0 {
-        log::info!("Verbose logging enabled (level: {})", log_level);
+        log::info!("Verbose logging enabled (level: {log_level})");
     }
 
     Ok(())
@@ -69,15 +69,20 @@ macro_rules! time_operation {
 
 /// Log HTTP request details
 pub fn log_http_request(method: &str, url: &str, has_body: bool) {
-    log::debug!("HTTP {} {}{}", method, url, if has_body { " (with body)" } else { "" });
+    log::debug!(
+        "HTTP {} {}{}",
+        method,
+        url,
+        if has_body { " (with body)" } else { "" }
+    );
 }
 
 /// Log HTTP response details
 pub fn log_http_response(status: u16, elapsed: std::time::Duration) {
     if status >= 400 {
-        log::warn!("HTTP response: {} in {:?}", status, elapsed);
+        log::warn!("HTTP response: {status} in {elapsed:?}");
     } else {
-        log::debug!("HTTP response: {} in {:?}", status, elapsed);
+        log::debug!("HTTP response: {status} in {elapsed:?}");
     }
 }
 
@@ -109,9 +114,7 @@ mod tests {
             assert_eq!(
                 get_log_level(verbose_count),
                 expected_level,
-                "verbose_count {} should map to {:?}",
-                verbose_count,
-                expected_level
+                "verbose_count {verbose_count} should map to {expected_level:?}"
             );
         }
     }
@@ -121,11 +124,11 @@ mod tests {
         // Test that init_logging returns a Result and handles multiple calls gracefully
         // Note: env_logger can only be initialized once per process, so subsequent calls may fail
         // but should not panic
-        
+
         // First call should succeed or fail gracefully
         let result1 = init_logging(1);
         assert!(result1.is_ok() || result1.is_err()); // Either is acceptable
-        
+
         // Second call should handle the "already initialized" case gracefully
         let result2 = init_logging(2);
         assert!(result2.is_ok() || result2.is_err()); // Either is acceptable, shouldn't panic

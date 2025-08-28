@@ -21,9 +21,9 @@ impl Default for Config {
 
 impl Config {
     /// Loads configuration from disk, returning default config if file doesn't exist
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if:
     /// - Configuration file exists but cannot be read
     /// - Configuration file format is invalid JSON
@@ -40,9 +40,9 @@ impl Config {
     }
 
     /// Saves the current configuration to disk
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if:
     /// - Cannot create config directory
     /// - Cannot write to config file
@@ -61,9 +61,9 @@ impl Config {
     }
 
     /// Returns the path to the configuration file
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if:
     /// - System doesn't support standard config directories
     /// - HOME environment variable is not set

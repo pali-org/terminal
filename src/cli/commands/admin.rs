@@ -1,13 +1,13 @@
-use crate::{api::ApiClient, config::Config, ID_DISPLAY_LENGTH};
 use crate::cli::types::AdminAction;
+use crate::{api::ApiClient, config::Config, ID_DISPLAY_LENGTH};
 use anyhow::Result;
 use chrono::TimeZone;
 use colored::Colorize;
 
 /// Handles admin actions (key rotation, generation, listing, revocation)
-/// 
+///
 /// # Errors
-/// 
+///
 /// Returns an error if:
 /// - Network request fails
 /// - API key is invalid or lacks admin privileges
@@ -92,7 +92,10 @@ async fn list_keys() -> Result<()> {
             .timestamp_opt(key.created_at, 0)
             .latest()
             .map(|dt| dt.with_timezone(&chrono::Local))
-            .map_or_else(|| "Invalid date".to_string(), |dt| dt.format("%Y-%m-%d %H:%M:%S").to_string());
+            .map_or_else(
+                || "Invalid date".to_string(),
+                |dt| dt.format("%Y-%m-%d %H:%M:%S").to_string(),
+            );
 
         let status = if key.active {
             "active".green()
@@ -118,7 +121,10 @@ async fn list_keys() -> Result<()> {
                 .timestamp_opt(last_used, 0)
                 .latest()
                 .map(|dt| dt.with_timezone(&chrono::Local))
-                .map_or_else(|| "Invalid date".to_string(), |dt| dt.format("%Y-%m-%d %H:%M:%S").to_string());
+                .map_or_else(
+                    || "Invalid date".to_string(),
+                    |dt| dt.format("%Y-%m-%d %H:%M:%S").to_string(),
+                );
             print!(" [Last used: {}]", last_used_dt.dimmed());
         }
 
@@ -139,9 +145,9 @@ async fn revoke_key(id: String) -> Result<()> {
 }
 
 /// Initializes the Pali server with a new endpoint URL and retrieves the first admin key
-/// 
+///
 /// # Errors
-/// 
+///
 /// Returns an error if:
 /// - Configuration cannot be saved to disk
 /// - Network request to server fails
@@ -153,19 +159,22 @@ pub async fn initialize_with_url(url: String) -> Result<()> {
     let mut config = Config::load().unwrap_or_default();
     config.set_endpoint(&url);
     config.save()?;
-    
+
     println!("{} Set API endpoint to: {}", "✓".green(), url.cyan());
-    
+
     // Now create client with the new config and initialize
     let client = ApiClient::new()?;
     let admin_key = client.initialize().await?;
-    
+
     // Save the admin key to config
     config.set_api_key(&admin_key);
     config.save()?;
 
     println!("{} Server initialized successfully", "✓".green());
-    println!("{} First admin key generated and saved to config", "✓".green());
+    println!(
+        "{} First admin key generated and saved to config",
+        "✓".green()
+    );
     println!();
     println!("{} {}", "Admin Key:".yellow().bold(), admin_key.cyan());
     println!();
@@ -185,15 +194,21 @@ pub async fn initialize_with_url(url: String) -> Result<()> {
 async fn reinitialize() -> Result<()> {
     let client = ApiClient::new()?;
     let admin_key = client.reinitialize().await?;
-    
+
     // Save the new admin key to config
     let mut config = Config::load()?;
     config.set_api_key(&admin_key);
     config.save()?;
 
     println!("{} Server reinitialized successfully", "✓".green());
-    println!("{} ALL previous admin keys have been deactivated", "⚠".yellow());
-    println!("{} New admin key generated and saved to config", "✓".green());
+    println!(
+        "{} ALL previous admin keys have been deactivated",
+        "⚠".yellow()
+    );
+    println!(
+        "{} New admin key generated and saved to config",
+        "✓".green()
+    );
     println!();
     println!("{} {}", "New Admin Key:".yellow().bold(), admin_key.cyan());
     println!();

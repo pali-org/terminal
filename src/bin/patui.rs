@@ -9,12 +9,12 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use pali_terminal::tui::{app::App, ui};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     Terminal,
 };
 use std::io;
-use pali_terminal::tui::{app::App, ui};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -27,7 +27,7 @@ async fn main() -> Result<()> {
 
     // Create app state
     let mut app = App::new()?;
-    
+
     // Run the TUI
     let res = run_app(&mut terminal, &mut app).await;
 
@@ -50,7 +50,7 @@ async fn main() -> Result<()> {
 async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> {
     // Load initial todos
     app.load_todos().await?;
-    
+
     loop {
         terminal.draw(|f| ui::render(f, app))?;
 

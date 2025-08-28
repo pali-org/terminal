@@ -1,8 +1,7 @@
 use crate::{
-    api::{ApiClient, CreateTodoRequest, Todo, UpdateTodoRequest}, 
+    api::{ApiClient, CreateTodoRequest, Todo, UpdateTodoRequest},
     cli::utils::resolve_partial_id,
-    ID_DISPLAY_LENGTH, 
-    time_operation
+    time_operation, ID_DISPLAY_LENGTH,
 };
 use anyhow::{Context, Result};
 use chrono::{Local, NaiveDateTime, TimeZone, Utc};
@@ -29,9 +28,9 @@ fn format_due_date(due_ts: i64) -> Option<ColoredString> {
 }
 
 /// Adds a new todo item with the specified details
-/// 
+///
 /// # Errors
-/// 
+///
 /// Returns an error if:
 /// - Network request fails
 /// - Invalid date format provided
@@ -111,9 +110,9 @@ pub fn parse_priority(priority_str: &str) -> i32 {
 }
 
 /// Lists todos with optional filtering by completion status, tag, and priority
-/// 
+///
 /// # Errors
-/// 
+///
 /// Returns an error if:
 /// - Network request fails
 /// - Server returns an error response
@@ -121,8 +120,8 @@ pub fn parse_priority(priority_str: &str) -> i32 {
 pub async fn list(all: bool, tag: Option<String>, priority: Option<String>) -> Result<()> {
     log::info!("Loading configuration and connecting to server");
     let client = ApiClient::new()?;
-    
-    log::info!("Fetching todos from server (all={}, tag={:?}, priority={:?})", all, tag, priority);
+
+    log::info!("Fetching todos from server (all={all}, tag={tag:?}, priority={priority:?})");
     let todos = time_operation!(
         client.list_todos(tag, priority).await?,
         "Fetch todos from server"
@@ -154,9 +153,9 @@ pub async fn list(all: bool, tag: Option<String>, priority: Option<String>) -> R
 }
 
 /// Retrieves and displays a specific todo by ID
-/// 
+///
 /// # Errors
-/// 
+///
 /// Returns an error if:
 /// - Network request fails
 /// - Todo with the given ID is not found
@@ -164,11 +163,12 @@ pub async fn list(all: bool, tag: Option<String>, priority: Option<String>) -> R
 /// - API key is missing or invalid
 pub async fn get(id: String) -> Result<()> {
     let client = ApiClient::new()?;
-    
+
     // Resolve partial ID to full ID
-    let full_id = resolve_partial_id(&id, &client).await
-        .context(format!("Failed to resolve ID '{}'", id))?;
-    
+    let full_id = resolve_partial_id(&id, &client)
+        .await
+        .context(format!("Failed to resolve ID '{id}'"))?;
+
     let todo = client.get_todo(&full_id).await?;
 
     println!("{}", "Todo Details:".bold());
@@ -178,9 +178,9 @@ pub async fn get(id: String) -> Result<()> {
 }
 
 /// Updates an existing todo item with new values
-/// 
+///
 /// # Errors
-/// 
+///
 /// Returns an error if:
 /// - Network request fails
 /// - Todo with the given ID is not found
@@ -196,10 +196,11 @@ pub async fn update(
     _tags: Option<String>,
 ) -> Result<()> {
     let client = ApiClient::new()?;
-    
+
     // Resolve partial ID to full ID
-    let full_id = resolve_partial_id(&id, &client).await
-        .context(format!("Failed to resolve ID '{}'", id))?;
+    let full_id = resolve_partial_id(&id, &client)
+        .await
+        .context(format!("Failed to resolve ID '{id}'"))?;
 
     let due_timestamp = due.map(|d| parse_date(&d)).transpose()?;
 
@@ -221,9 +222,9 @@ pub async fn update(
 }
 
 /// Deletes a todo item by ID
-/// 
+///
 /// # Errors
-/// 
+///
 /// Returns an error if:
 /// - Network request fails
 /// - Todo with the given ID is not found
@@ -231,11 +232,12 @@ pub async fn update(
 /// - API key is missing or invalid
 pub async fn delete(id: String) -> Result<()> {
     let client = ApiClient::new()?;
-    
+
     // Resolve partial ID to full ID
-    let full_id = resolve_partial_id(&id, &client).await
-        .context(format!("Failed to resolve ID '{}'", id))?;
-    
+    let full_id = resolve_partial_id(&id, &client)
+        .await
+        .context(format!("Failed to resolve ID '{id}'"))?;
+
     client.delete_todo(&full_id).await?;
 
     println!("{} Deleted todo with ID: {}", "✓".green(), id.cyan());
@@ -244,9 +246,9 @@ pub async fn delete(id: String) -> Result<()> {
 }
 
 /// Toggles the completion status of a todo item
-/// 
+///
 /// # Errors
-/// 
+///
 /// Returns an error if:
 /// - Network request fails
 /// - Todo with the given ID is not found
@@ -254,11 +256,12 @@ pub async fn delete(id: String) -> Result<()> {
 /// - API key is missing or invalid
 pub async fn toggle(id: String) -> Result<()> {
     let client = ApiClient::new()?;
-    
+
     // Resolve partial ID to full ID
-    let full_id = resolve_partial_id(&id, &client).await
-        .context(format!("Failed to resolve ID '{}'", id))?;
-    
+    let full_id = resolve_partial_id(&id, &client)
+        .await
+        .context(format!("Failed to resolve ID '{id}'"))?;
+
     let todo = client.toggle_todo(&full_id).await?;
 
     let status = if todo.completed {
@@ -277,9 +280,9 @@ pub async fn toggle(id: String) -> Result<()> {
 }
 
 /// Marks a todo item as completed
-/// 
+///
 /// # Errors
-/// 
+///
 /// Returns an error if:
 /// - Network request fails
 /// - Todo with the given ID is not found
@@ -287,10 +290,11 @@ pub async fn toggle(id: String) -> Result<()> {
 /// - API key is missing or invalid
 pub async fn complete(id: String) -> Result<()> {
     let client = ApiClient::new()?;
-    
+
     // Resolve partial ID to full ID
-    let full_id = resolve_partial_id(&id, &client).await
-        .context(format!("Failed to resolve ID '{}'", id))?;
+    let full_id = resolve_partial_id(&id, &client)
+        .await
+        .context(format!("Failed to resolve ID '{id}'"))?;
 
     let request = UpdateTodoRequest {
         title: None,
@@ -308,9 +312,9 @@ pub async fn complete(id: String) -> Result<()> {
 }
 
 /// Searches todos by query string and displays results
-/// 
+///
 /// # Errors
-/// 
+///
 /// Returns an error if:
 /// - Network request fails
 /// - Server returns an error response
@@ -320,10 +324,7 @@ pub async fn search(query: String) -> Result<()> {
     let todos = client.search_todos(&query).await?;
 
     if todos.is_empty() {
-        println!(
-            "{}",
-            format!("No todos found matching '{query}'").yellow()
-        );
+        println!("{}", format!("No todos found matching '{query}'").yellow());
         return Ok(());
     }
 
