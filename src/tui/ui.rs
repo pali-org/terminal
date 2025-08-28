@@ -10,6 +10,7 @@ use ratatui::{
 
 use crate::tui::app::{App, AppScreen};
 use crate::ID_DISPLAY_LENGTH;
+
 use chrono::{Local, TimeZone, Utc};
 
 /// Formats due date timestamp for display in TUI
@@ -65,7 +66,12 @@ pub fn render(frame: &mut Frame, app: &mut App) {
 
     // Render loading overlay if needed
     if app.loading {
-        render_loading_overlay(frame, size);
+        render_loading_overlay(frame, size, app);
+    }
+
+    // Render toast notifications
+    if app.error_message.is_some() || app.success_message.is_some() {
+        render_toast_notification(frame, size, app);
     }
 }
 
@@ -133,22 +139,20 @@ fn render_header(frame: &mut Frame, area: Rect, app: &App) {
 }
 
 fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
-    let status_text = if let Some(error) = &app.error_message {
-        error.as_str()
+    let (status_text, status_style) = if let Some(error) = &app.error_message {
+        (
+            error.as_str(),
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+        )
     } else if let Some(success) = &app.success_message {
-        success.as_str()
+        (
+            success.as_str(),
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        )
     } else {
-        "Ready"
-    };
-
-    let status_style = if app.error_message.is_some() {
-        Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
-    } else if app.success_message.is_some() {
-        Style::default()
-            .fg(Color::Green)
-            .add_modifier(Modifier::BOLD)
-    } else {
-        Style::default().fg(Color::Gray)
+        ("Ready", Style::default().fg(Color::Gray))
     };
 
     let status_bar = Paragraph::new(status_text).style(status_style);
@@ -218,20 +222,30 @@ fn render_todo_list(frame: &mut Frame, area: Rect, app: &mut App) {
 
     let title = if app.filtered_todos.is_empty() {
         if app.todos.is_empty() {
-            "No todos yet - press 'n' to add one!"
+            "📝 Welcome to Pali! Press 'n' to add your first todo"
         } else {
-            "No todos match current filters - press 'f' to toggle all/pending, '0' to clear priority filter, '/' to search"
+            "🔍 No todos match your current filters - press 'f' to toggle, '0' to clear priority filter, or '/' to search"
         }
     } else {
-        "Todos (↑↓ to select, Enter to toggle, d to delete, e to edit, n to add, / to search, f to filter)"
+        "📋 Your Todos (↑↓ select, Enter toggle, d delete, e edit, n add, / search, f filter)"
     };
 
-    let todos_list = List::new(todos)
-        .block(Block::default().title(title).borders(Borders::ALL))
-        .highlight_style(Style::default().bg(Color::Blue));
+    // Render different UI based on whether there are todos to show
+    if app.filtered_todos.is_empty() && app.todos.is_empty() {
+        // First-time user empty state with helpful tips
+        render_empty_state_welcome(frame, area);
+    } else if app.filtered_todos.is_empty() {
+        // Filtered empty state
+        render_empty_state_filtered(frame, area, app);
+    } else {
+        // Normal todo list
+        let todos_list = List::new(todos)
+            .block(Block::default().title(title).borders(Borders::ALL))
+            .highlight_style(Style::default().bg(Color::Blue));
 
-    // Use app's persistent list_state instead of creating new one each time
-    frame.render_stateful_widget(todos_list, area, &mut app.list_state);
+        // Use app's persistent list_state instead of creating new one each time
+        frame.render_stateful_widget(todos_list, area, &mut app.list_state);
+    }
 }
 
 fn render_add_todo(frame: &mut Frame, area: Rect, app: &App) {
@@ -630,16 +644,20 @@ fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
             Span::raw(" help"),
         ],
         AppScreen::AddTodo => vec![
-            Span::styled("Tab", Style::default().fg(Color::Yellow)),
-            Span::raw(" next field │ "),
+            Span::styled("Tab/↓", Style::default().fg(Color::Yellow)),
+            Span::raw(" next │ "),
+            Span::styled("Shift+Tab/↑", Style::default().fg(Color::Yellow)),
+            Span::raw(" prev │ "),
             Span::styled("Enter", Style::default().fg(Color::Yellow)),
             Span::raw(" create │ "),
             Span::styled("Esc", Style::default().fg(Color::Yellow)),
             Span::raw(" cancel"),
         ],
         AppScreen::EditTodo => vec![
-            Span::styled("Tab", Style::default().fg(Color::Yellow)),
-            Span::raw(" next field │ "),
+            Span::styled("Tab/↓", Style::default().fg(Color::Yellow)),
+            Span::raw(" next │ "),
+            Span::styled("Shift+Tab/↑", Style::default().fg(Color::Yellow)),
+            Span::raw(" prev │ "),
             Span::styled("Enter", Style::default().fg(Color::Yellow)),
             Span::raw(" save │ "),
             Span::styled("Esc", Style::default().fg(Color::Yellow)),
@@ -665,21 +683,227 @@ fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
     frame.render_widget(help, area);
 }
 
-fn render_loading_overlay(frame: &mut Frame, area: Rect) {
-    let block = Block::default()
-        .title(" Loading... ")
-        .borders(Borders::ALL)
-        .style(Style::default().bg(Color::Black));
+fn render_loading_overlay(frame: &mut Frame, area: Rect, app: &App) {
+    let spinner_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+    let spinner_char = spinner_chars[app.loading_spinner_state % spinner_chars.len()];
 
-    let loading_text = Paragraph::new("Please wait...")
-        .block(block)
-        .style(Style::default().fg(Color::Yellow));
+    let loading_text = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            format!("{spinner_char} Loading..."),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            "Please wait...",
+            Style::default().fg(Color::Gray),
+        )]),
+    ];
+
+    let loading_dialog = Paragraph::new(loading_text)
+        .block(
+            Block::default()
+                .title(" Processing ")
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Cyan)),
+        )
+        .wrap(Wrap { trim: true });
 
     // Calculate center position for loading dialog
-    let popup_area = centered_rect(30, 20, area);
+    let popup_area = centered_rect(40, 25, area);
 
     frame.render_widget(Clear, popup_area);
-    frame.render_widget(loading_text, popup_area);
+    frame.render_widget(loading_dialog, popup_area);
+}
+
+fn render_toast_notification(frame: &mut Frame, area: Rect, app: &App) {
+    let (message, icon, color) = if let Some(error) = &app.error_message {
+        (error.as_str(), "❌", Color::Red)
+    } else if let Some(success) = &app.success_message {
+        (success.as_str(), "✅", Color::Green)
+    } else {
+        return;
+    };
+
+    // Simple single line toast - no padding, no borders, minimal intrusion
+    let toast_text = Line::from(vec![Span::styled(
+        format!("{icon} {message}"),
+        Style::default().fg(color).add_modifier(Modifier::BOLD),
+    )]);
+
+    // Position toast at top-right corner, single line only
+    let toast_width = (message.len() + 3).min(area.width.saturating_sub(2) as usize) as u16;
+    let popup_area = Rect {
+        x: area.width.saturating_sub(toast_width + 2),
+        y: 1,
+        width: toast_width + 2,
+        height: 1,
+    };
+
+    // Render directly without borders or background clearing
+    let toast_paragraph = Paragraph::new(toast_text);
+    frame.render_widget(toast_paragraph, popup_area);
+}
+
+fn render_empty_state_welcome(frame: &mut Frame, area: Rect) {
+    let welcome_text = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            "🎉 Welcome to Pali Todo Manager!",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+        Line::from("Get started with your first todo:"),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("Press ", Style::default().fg(Color::Gray)),
+            Span::styled(
+                "n",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(" to add a new todo", Style::default().fg(Color::Gray)),
+        ]),
+        Line::from(vec![
+            Span::styled("Press ", Style::default().fg(Color::Gray)),
+            Span::styled(
+                "?",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                " for help and keyboard shortcuts",
+                Style::default().fg(Color::Gray),
+            ),
+        ]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            "💡 Pro tips:",
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        )]),
+        Line::from("• Use priorities: ! (low), !! (medium), !!! (high)"),
+        Line::from("• Set due dates for better organization"),
+        Line::from("• Use search (/) to quickly find todos"),
+        Line::from("• Filter by priority (1/2/3) or status (f)"),
+    ];
+
+    let welcome_widget = Paragraph::new(welcome_text)
+        .block(
+            Block::default()
+                .title("📝 Welcome to Pali!")
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Cyan)),
+        )
+        .style(Style::default().fg(Color::White))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(welcome_widget, area);
+}
+
+fn render_empty_state_filtered(frame: &mut Frame, area: Rect, app: &App) {
+    let mut filter_info = Vec::new();
+
+    if !app.show_all_todos {
+        filter_info.push("• Showing pending todos only".to_string());
+    } else {
+        filter_info.push("• Showing all todos".to_string());
+    }
+
+    if let Some(priority) = app.filter_priority {
+        filter_info.push(format!("• Priority filter: {priority}"));
+    }
+
+    if !app.search_query.is_empty() {
+        filter_info.push(format!("• Search query: '{}'", app.search_query));
+    }
+
+    let mut filtered_text = vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            "🔍 No todos match your current filters",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            "Active filters:",
+            Style::default().fg(Color::Gray),
+        )]),
+    ];
+
+    for info in &filter_info {
+        filtered_text.push(Line::from(info.as_str()));
+    }
+
+    filtered_text.extend(vec![
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            "Try:",
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(vec![
+            Span::styled(
+                "f",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                " - Toggle showing all/pending todos",
+                Style::default().fg(Color::Gray),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled(
+                "0",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(" - Clear priority filter", Style::default().fg(Color::Gray)),
+        ]),
+        Line::from(vec![
+            Span::styled(
+                "/",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(" - Search all todos", Style::default().fg(Color::Gray)),
+        ]),
+        Line::from(vec![
+            Span::styled(
+                "r",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(" - Refresh todo list", Style::default().fg(Color::Gray)),
+        ]),
+    ]);
+
+    let filtered_widget = Paragraph::new(filtered_text)
+        .block(
+            Block::default()
+                .title("🔍 No Matching Todos")
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Yellow)),
+        )
+        .style(Style::default().fg(Color::White))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(filtered_widget, area);
 }
 
 // Helper function to center a rectangle within another rectangle

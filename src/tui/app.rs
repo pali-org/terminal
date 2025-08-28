@@ -6,6 +6,10 @@ use anyhow::Result;
 use pali_types::Todo;
 use ratatui::widgets::ListState;
 
+// Constants for better maintainability
+const SPINNER_STATES: usize = 4;
+const MESSAGE_TIMEOUT_TICKS: usize = 20; // 5 seconds at 4 FPS
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AppScreen {
     TodoList,
@@ -35,8 +39,10 @@ pub struct App {
     pub input_buffer: String,
     pub input_form: InputForm, // Advanced form for add/edit
     pub loading: bool,
+    pub loading_spinner_state: usize, // For animating spinner
     pub error_message: Option<String>,
     pub success_message: Option<String>,
+    pub message_timer: Option<usize>, // Auto-dismiss timer for messages
     // Search and filtering state
     pub search_query: String,
     pub show_all_todos: bool,
@@ -70,8 +76,10 @@ impl App {
             input_buffer: String::new(),
             input_form: InputForm::new(),
             loading: false,
+            loading_spinner_state: 0,
             error_message: None,
             success_message: None,
+            message_timer: None,
             // Initialize search and filtering
             search_query: String::new(),
             show_all_todos: false,
@@ -90,19 +98,44 @@ impl App {
         self.should_quit = true;
     }
 
+    pub fn handle_ctrl_c(&mut self) {
+        // Ctrl+C quits immediately
+        self.quit();
+    }
+
+    pub fn tick_spinner(&mut self) {
+        if self.loading {
+            self.loading_spinner_state = (self.loading_spinner_state + 1) % SPINNER_STATES;
+        }
+    }
+
+    pub fn tick_messages(&mut self) {
+        // Auto-dismiss messages after 5 seconds (20 ticks at 4 FPS)
+        if let Some(timer) = self.message_timer {
+            if timer > 0 {
+                self.message_timer = Some(timer - 1);
+            } else {
+                self.clear_messages();
+            }
+        }
+    }
+
     pub fn clear_messages(&mut self) {
         self.error_message = None;
         self.success_message = None;
+        self.message_timer = None;
     }
 
     pub fn show_error(&mut self, message: String) {
         self.error_message = Some(message);
         self.success_message = None;
+        self.message_timer = Some(MESSAGE_TIMEOUT_TICKS);
     }
 
     pub fn show_success(&mut self, message: String) {
         self.success_message = Some(message);
         self.error_message = None;
+        self.message_timer = Some(MESSAGE_TIMEOUT_TICKS);
     }
 
     /// Applies current search query and filters to update filtered_todos
@@ -577,7 +610,9 @@ impl App {
 
         match self.current_screen {
             AppScreen::TodoList => match key {
-                KeyCode::Char('q') | KeyCode::Esc => self.quit(),
+                KeyCode::Char('q') | KeyCode::Esc => {
+                    self.quit();
+                }
                 KeyCode::Char('r') => {
                     self.load_todos().await?;
                 }
@@ -666,10 +701,10 @@ impl App {
                 }
                 _ => {}
             },
-            KeyCode::Tab => {
+            KeyCode::Tab | KeyCode::Down => {
                 self.input_form.next_field();
             }
-            KeyCode::BackTab => {
+            KeyCode::BackTab | KeyCode::Up => {
                 self.input_form.previous_field();
             }
             KeyCode::Char(c) => {

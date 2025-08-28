@@ -1,6 +1,6 @@
 [package]
 name = "pali-terminal"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Yuvinscria Werdxz <werdxz@werdxz.info>"]
 description = "Terminal interfaces (CLI and TUI) for Pali todo management system"
