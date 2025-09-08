@@ -1263,7 +1263,7 @@ dependencies = [
 [[package]]
 name = "pali-types"
 version = "0.1.0"
-source = "git+https://github.com/pali-org/types.git#d6be3b74dec13d6d02961ee62ab03dc92a87d196"
+source = "git+https://github.com/pali-org/types.git#c1da11327a06dc9ce73a689d2d14caca5a14ceba"
 dependencies = [
  "serde",
 ]
