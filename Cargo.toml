@@ -25,7 +25,7 @@ http-optimized = ["reqwest/hickory-dns", "reqwest/rustls-tls"]
 
 [dependencies]
 anyhow = "1.0.99"
-chrono = { version = "0.4.41", features = ["serde"] }
+chrono = { version = "0.4.42", features = ["serde"] }
 colored = "3.0.0"
 directories = "6.0.0"
 pali-types = { git = "https://github.com/pali-org/types.git" }
