@@ -24,7 +24,7 @@ tui = ["dep:ratatui", "dep:crossterm"]
 http-optimized = ["reqwest/hickory-dns", "reqwest/rustls-tls"]
 
 [dependencies]
-anyhow = "1.0.99"
+anyhow = "1.0.100"
 chrono = { version = "0.4.41", features = ["serde"] }
 colored = "3.0.0"
 directories = "6.0.0"
